@@ -1,0 +1,33 @@
+ 
+kernel_ctrl API
+ 1  检查驱动在线状态               正常返回0
+ 2  hide_device_node            正常返回0
+ 3  get_main_dev_infomation     返回节点名称+设备号
+ 4  get_ctrl_dev_infomation     返回节点名称+设备号
+ 5  user_ok                     用于告诉用户空间支柱已经在工作了 可以调用API
+ 6  keep_connected              类似于5 user_ok 但是 是第二次及以上调用的
+
+user_helper API
+ GET_KSLLSYMS   请求kallsyms name 正常返回类似0xffffaacbb11的地址 错误返回null
+ EXC_SHELL      执行shell命令 返回 -1 or 0
+ USR_EXIT       退出
+
+
+流程图
+驱动被加载
+k 创建节点
+k 抹除节点保留ctrl
+加载完成
+
+用户空间支柱组件加载
+u 请求->hide_device_node 抹除所有节点 进入幽灵模式
+u 请求->get_main_dev_infomation 拉取main节点信息 创建信息进程供对接
+u 请求->user_ok 等待返回 / 请求->keep_connected
+├── 返回为不是 exit
+│   ├── 将受到的命令解析 调用为user_helper API
+│   └── 继续请求user_keep_connected
+└── 是exit - user_helper退出
+
+k 收到user的user_ok
+k call usr_call
+k 利用bridge拉取kallsyms_look_up_name
